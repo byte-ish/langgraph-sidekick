@@ -1,0 +1,40 @@
+flowchart TD
+    subgraph User["👤 User"]
+        UI["Gradio UI"]
+    end
+
+    subgraph LangGraph["LangGraph Orchestrator"]
+        Start[START]
+        Worker["Worker Node (ChatOpenAI + Tools)"]
+        Router["Worker Router"]
+        Tools["ToolNode (Playwright Toolkit)"]
+        Evaluator["Evaluator Node (ChatOpenAI + Structured Output)"]
+        End[END]
+    end
+
+    subgraph State["Shared State"]
+        Messages["messages[]"]
+        Criteria["success_criteria"]
+        Feedback["feedback_on_work"]
+        Flags["success_criteria_met / user_input_needed"]
+    end
+
+    %% User interaction
+    UI -->|Input: Request & Success Criteria| Start
+
+    %% LangGraph flow
+    Start --> Worker
+    Worker --> Router
+    Router -->|Tool Calls Present| Tools
+    Router -->|No Tool Calls| Evaluator
+    Tools --> Worker
+    Evaluator -->|Criteria Met OR Needs User Input| End
+    Evaluator -->|Criteria NOT Met| Worker
+
+    %% State
+    Worker -->|Updates| State
+    Tools -->|Updates| State
+    Evaluator -->|Updates| State
+
+    %% Output
+    End -->|Assistant Response + Evaluator Feedback| UI
